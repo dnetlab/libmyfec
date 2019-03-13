@@ -17,5 +17,5 @@ install(
 
 install(
 	TARGETS myfec LIBRARY
-	DESTINATION myfec/lib
+	DESTINATION lib
 )
