@@ -8,9 +8,15 @@ to install the very latest versions of the following packages:
 # Build & Install
 Then you should build the project, using these commands:
 
-git clone https://github.com/dnetlab/libmyfec.git
-cd libmyfec
-mkdir build
-cmake ..
-make
-sudo make install
+	git clone https://github.com/dnetlab/libmyfec.git
+
+	cd libmyfec
+
+	mkdir build
+
+	cmake ..
+
+	make
+
+	sudo make install
+
