@@ -53,6 +53,7 @@ typedef struct group_data
 	int y;
 	int len;
 
+
 	int	cnt;
 	time_t last_time;
 	SFXHASH* data_map;
@@ -64,6 +65,8 @@ typedef struct already_group_data
 	int	seq;
 	time_t last_time;
 	myfec_ctx_t* ctx;
+	int should_cnt;
+	int already_cnt;
 }already_group_data_t;
 
 typedef struct buf_data
@@ -125,6 +128,9 @@ struct myfec_ctx {
 	packet_data_t*	buf;		//used for decode
 	int buf_cnt;
 	int cur_buf_id;
+
+	int received_cnt;
+	int should_receive_cnt;
 };
 
 void myfec_init(myfec_ctx_t* ctx, int max_en_cnt, int re_num, int max_fec_len, int max_fec_x);
@@ -134,5 +140,9 @@ int myfec_encode_input(myfec_ctx_t* ctx, char* in_buf, int in_len);
 int myfec_encode_output(myfec_ctx_t* ctx);
 
 int myfec_decode(myfec_ctx_t* ctx, char *src, int src_len);	//return decode len, dst_len should be larger than ACTUAL_MTU
+
+int myfec_cal_packet_lossy(myfec_ctx_t* ctx);
+int myfec_reset_packet_lossy(myfec_ctx_t* ctx);
+void myfec_set_re_num(myfec_ctx_t* ctx, int re_num);
 
 #endif /* _MYFEC_H_ */

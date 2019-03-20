@@ -34,6 +34,29 @@ int make_already_recved(myfec_ctx_t* ctx, int seq);
 void aging_already_group(myfec_ctx_t* ctx, int age_time);
 int next_buf_id(myfec_ctx_t* ctx);
 
+int myfec_cal_packet_lossy(myfec_ctx_t* ctx)
+{
+	if (ctx && ctx->should_receive_cnt > 0)
+	{
+		return (ctx->should_receive_cnt - ctx->received_cnt) * 100 / ctx->should_receive_cnt;
+	}
+	else
+	{
+		return 10;
+	}
+}
+
+int myfec_reset_packet_lossy(myfec_ctx_t* ctx)
+{
+	ctx->should_receive_cnt = 0;
+	ctx->received_cnt = 0;
+}
+
+void myfec_set_re_num(myfec_ctx_t* ctx, int re_num)
+{
+	ctx->re_num = re_num;
+}
+
 group_data_t* group_find(SFXHASH* group_map, int seq)
 {
 	group_key_t key;
@@ -213,15 +236,19 @@ int check_already_recved(myfec_ctx_t* ctx, int seq)
 	int ret = 0;
 	group_key_t key;
 	key.seq = seq;
-	group_data_t* data = (group_data_t*)sfxhash_find_node(ctx->already_group_map, (void*)&key);
+	already_group_data_t* data = (already_group_data_t*)sfxhash_find_node(ctx->already_group_map, (void*)&key);
 	if (data)
 	{
+		if (data->already_cnt < data->should_cnt)
+		{
+			data->already_cnt++;
+		}
 		ret = 1;
 	}
 	return ret;
 }
 
-int make_already_recved(myfec_ctx_t* ctx, int seq)
+int make_already_recved(myfec_ctx_t* ctx, int seq, int should_cnt, int already_cnt)
 {
 	int ret = 0;
 	group_key_t key;
@@ -236,6 +263,8 @@ int make_already_recved(myfec_ctx_t* ctx, int seq)
 		already_group_data_t already_group;
 		already_group.last_time = time(NULL);//data->last_time;
 		already_group.seq = seq;
+		already_group.already_cnt = already_cnt;
+		already_group.should_cnt = should_cnt;
 		MY_DEBUG_INFO("==== add seq : %d to already_group_map\n", seq);
 		sfxhash_add(ctx->already_group_map, (void*)&key, (void*)&already_group);
 	}
@@ -251,6 +280,8 @@ void aging_already_group(myfec_ctx_t* ctx, int age_time)
 		time_t cur_time = time(NULL);
 		if (ag_data->last_time + age_time < cur_time)
 		{
+			ctx->should_receive_cnt += ag_data->should_cnt;
+			ctx->received_cnt += ag_data->already_cnt;
 			sfxhash_free_node(ctx->already_group_map, tail);
 		}
 	}
@@ -383,7 +414,7 @@ int myfec_decode(myfec_ctx_t* ctx, char *src, int src_len)
 
 				//TODO: after fec decode, should add the seq into already_group_map
 				MY_DEBUG_INFO("=== make already for seq:%d\n", seq);
-				make_already_recved(ctx, seq);
+				make_already_recved(ctx, seq, fec_num + fec_redundant_num, fec_num);
 				aging_already_group(ctx, 3);
 				//TODO: after fec decode, auto recycle the packet buffers used by freeing a node from group_map
 				group_key_t g_key;
@@ -569,6 +600,11 @@ int myfec_encode_output(myfec_ctx_t* ctx)
 	return ret;
 }
 
+void myfec_adjust_re_num(myfec_ctx_t* ctx, int re_num)
+{
+	if (ctx)
+		ctx->re_num = re_num;
+}
 
 void myfec_init(myfec_ctx_t* ctx, int max_en_cnt, int re_num, int max_fec_len, int max_fex_x)
 {
