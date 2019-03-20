@@ -30,7 +30,7 @@ int buf_map_free(void* key, void* value);
 int group_map_free(void* key, void* value);
 u32_t next_seq(u32_t a);
 int check_already_recved(myfec_ctx_t* ctx, int seq);
-int make_already_recved(myfec_ctx_t* ctx, int seq);
+int make_already_recved(myfec_ctx_t* ctx, int seq, int should_cnt, int already_cnt);
 void aging_already_group(myfec_ctx_t* ctx, int age_time);
 int next_buf_id(myfec_ctx_t* ctx);
 
